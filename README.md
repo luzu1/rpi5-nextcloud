@@ -8,9 +8,9 @@
 
 - [00 - Overview](docs/00-overview.md)  
 - [01 - Infraestructura](docs/01-infraestructura.md)  
-- [02 - Docker & Nextcloud](docs/02-docker.md)  
-- [03 - Seguridad](docs/04-seguridad.md)  
-- [04 - Automatización](docs/05-automatizacion.md)  
+- [02 - Docker & Nextcloud](docs/02-docker&nextcloud.md)  
+- [03 - Seguridad](docs/03-seguridad.md)  
+- [04 - Automatización](docs/04-automatizacion.md)  
 - [05 - Vaultwarden](docs/05-vaultwarden.md)  
 - [07 - Errores y lecciones aprendidas](docs/07-errores.md)  
 
