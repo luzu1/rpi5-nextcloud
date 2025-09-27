@@ -1,0 +1,17 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Entornos
+venv/
+node_modules/
+.env
+
+# Contenedores / datos persistentes (NO subir)
+data/
+backups/
+*.log
+
+# Editores
+.vscode/
+.idea/
