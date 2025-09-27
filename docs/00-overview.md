@@ -1,13 +1,11 @@
-Objetivo
+# 00 - Overview
 
-Montar un servidor Nextcloud seguro y automatizado sobre Raspberry Pi 5 + Docker, con:
+## Objetivo
+Montar un servidor **Nextcloud** seguro y automatizado sobre **Raspberry Pi 5** con **Docker** y soporte de:
+- Base de datos MariaDB
+- Publicación mediante túnel seguro
+- Acceso privado vía VPN (Tailscale)
+- Backups automatizados con retención y alertas
+- Scripts de mantenimiento y actualización
 
-Base de datos MariaDB
 
-Túnel seguro para acceso externo
-
-Acceso privado mediante VPN (Tailscale)
-
-Backups automatizados y alertas por correo
-
-Scripts de mantenimiento
