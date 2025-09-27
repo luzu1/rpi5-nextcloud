@@ -50,7 +50,7 @@ Solución aplicada:
 
 -----
 
-2) Problemas de permisos en carpeta data
+## 2) Problemas de permisos en carpeta data
 
 Problema:
 Nextcloud no podía escribir en /srv/nextcloud/data.
@@ -79,7 +79,7 @@ docker restart nextcloud_app
 
 ------
 
-3) Puertos bloqueados por ISP
+## 3) Puertos bloqueados por ISP
 
 Problema:
 No era posible acceder desde Internet al servidor, aunque el router tenía NAT configurado.
@@ -101,7 +101,7 @@ Solución aplicada:
 
 -------------
 
-  4) Backups incompletos (sin base de datos)
+## 4) Backups incompletos (sin base de datos)
 
 Problema:
 Los primeros backups incluían solo los archivos de usuario, no la base de datos.
@@ -124,7 +124,7 @@ Solución aplicada:
 
 ------------
 
-5) Notificaciones por correo (msmtp)
+## 5) Notificaciones por correo (msmtp)
 
 Problema:
 msmtp fallaba con autenticación o TLS, sin enviar correos.
@@ -148,7 +148,7 @@ Solución aplicada:
 
 ----------
 
-6) Contenedor caído sin aviso (sin watchdog)
+## 6) Contenedor caído sin aviso (sin watchdog)
 
 Problema:
 El contenedor nextcloud_app se detenía sin notificación.
@@ -170,7 +170,7 @@ Solución aplicada:
 
 ----------
 
-) Logs de Docker sin control de crecimiento
+## 7) Logs de Docker sin control de crecimiento
 
 Problema:
 Los logs en /var/lib/docker/containers crecían sin límite, llenando el disco.
