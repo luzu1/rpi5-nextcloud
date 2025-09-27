@@ -1,5 +1,11 @@
+## Introducción
+En este proyecto usamos **Docker** y **Docker Compose** para desplegar Nextcloud y sus servicios en una Raspberry Pi 5.  
 
-## Instalar Docker y Docker Compose plugin
+La instalación de **Nextcloud** se hace **dentro de Docker**: no se descarga manualmente ni se configura PHP/Apache en el host.  
+El servicio `nextcloud_app` en `docker-compose.yml` se encarga de levantar automáticamente Nextcloud con su configuración mínima.  
+
+
+## 1) Instalar Docker y Docker Compose plugin
 
 ```bash
 sudo apt update && sudo apt -y upgrade
@@ -12,7 +18,6 @@ Verifica:
 docker --version
 docker compose version
 ```
-------
 
 Estructura de carpetas recomendada
 
@@ -34,7 +39,7 @@ sudo mkdir -p /srv/cloudflared
 
 ----------
 
-Variables de entorno
+## 2) Variables de entorno
 
 Crea un .env local (usa valores reales solo en el servidor). En el repo público sube .env.example con placeholders.
 ```bash
@@ -60,7 +65,10 @@ chmod 600 ~/config/.env
 
 -----------
 
-Ejemplo de docker-compose.yml
+## 3) Archivo `docker-compose.yml`
+
+Aquí definimos **todos los servicios**.  
+El contenedor `nextcloud_app` es el que instala y corre Nextcloud:
 
 ```bash
 version: "3.8"
@@ -117,7 +125,7 @@ services:
     command: tunnel run
 ```
 --------
-Ejecución
+## 4) Ejecución
 
 ```bash
 cd config
@@ -125,24 +133,28 @@ docker compose pull
 docker compose up -d
 docker compose ps
 ```
+
 ----------
 
-Acceso:
+## 5) Acceso:
 
 - LAN: http://<IP-LAN>:8080
 
 - Externo: el dominio configurado en tu túnel (si usas tunnel).
 
 ------
-Primeros ajustes de Nextcloud:
+
+## 6) Primeros ajustes de Nextcloud:
 
 - Si el instalador indica problemas de permisos en data, corrige:
 ```bash
 sudo chown -R 1000:1000 /srv/nextcloud/app /srv/nextcloud/data
 docker restart nextcloud_app
 ```
+
 ------
-Troubleshooting rápido
+
+## 7) Troubleshooting rápido
 
 - Ver contenedores activos
 ```bash
