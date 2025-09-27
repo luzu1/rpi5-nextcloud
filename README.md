@@ -12,7 +12,6 @@
 - [03 - Backups](docs/03-backups.md)
 - [04 - Seguridad](docs/04-seguridad.md)
 - [05 - Automatización](docs/05-automatizacion.md)
-- [06 - Monitoreo](docs/06-monitoreo.md)
 - [Errores y lecciones aprendidas](docs/errores.md)
 
 ---
