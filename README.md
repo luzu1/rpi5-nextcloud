@@ -16,7 +16,7 @@ Infraestructura personal segura con **Nextcloud** y **MariaDB** en **Raspberry P
 - [04 - Seguridad](docs/04-seguridad.md)
 - [05 - Automatización](docs/05-automatizacion.md)
 - [06 - Monitoreo](docs/06-monitoreo.md)
-- [07 - Errores & Lecciones](docs/07-errores.md)
+- [errores](docs/07-errores.md)
 
 ## Despliegue rápido (resumen)
 1. Copia `.env.example` a `.env` y completa variables.
