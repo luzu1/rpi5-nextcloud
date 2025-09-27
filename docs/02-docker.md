@@ -12,6 +12,7 @@ Verifica:
 docker --version
 docker compose version
 ```
+------
 
 Estructura de carpetas recomendada
 
@@ -30,6 +31,34 @@ sudo mkdir -p /srv/cloudflared
 - /srv/npm/* → (opcional) Nginx Proxy Manager
 
 - /srv/cloudflared → (opcional) configuración del túnel
+
+----------
+
+Variables de entorno
+
+Crea un .env local (usa valores reales solo en el servidor). En el repo público sube .env.example con placeholders.
+```bash
+mkdir -p ~/config
+cat > ~/config/.env <<'EOF'
+# Zona horaria
+TZ=Europe/Madrid
+
+# MariaDB (Nextcloud)
+DB_ROOT_PASSWORD=CAMBIA_ESTE_VALOR
+DB_NAME=nextcloud
+DB_USER=nc_user
+DB_PASSWORD=CAMBIA_ESTE_VALOR
+
+# Cloudflare Tunnel (opcional)
+CLOUDFLARED_TUNNEL_TOKEN=PEGA_AQUI_TU_TOKEN
+EOF
+```
+Proteger con permisos:
+```bash
+chmod 600 ~/config/.env
+```
+
+-----------
 
 Ejemplo de docker-compose.yml
 
@@ -87,7 +116,7 @@ services:
       - TUNNEL_TOKEN=${CLOUDFLARED_TUNNEL_TOKEN}
     command: tunnel run
 ```
-
+--------
 Ejecución
 
 ```bash
@@ -95,4 +124,40 @@ cd config
 docker compose pull
 docker compose up -d
 docker compose ps
+```
+----------
+
+Acceso:
+
+- LAN: http://<IP-LAN>:8080
+
+- Externo: el dominio configurado en tu túnel (si usas tunnel).
+
+------
+Primeros ajustes de Nextcloud:
+
+- Si el instalador indica problemas de permisos en data, corrige:
+```bash
+sudo chown -R 1000:1000 /srv/nextcloud/app /srv/nextcloud/data
+docker restart nextcloud_app
+```
+------
+Troubleshooting rápido
+
+- Ver contenedores activos
+```bash
+docker ps
+```
+- Últimas líneas de logs
+```bash
+docker logs -n 200 nextcloud_app
+docker logs -n 200 nextcloud_db
+```
+- Ver puertos en uso
+```bash
+ss -tulpn | grep -E '(:80|:81|:443|:8080)'
+```
+- Revisión de permisos si Nextcloud no puede escribir
+```bash
+sudo chown -R 1000:1000 /srv/nextcloud/app /srv/nextcloud/data
 ```
