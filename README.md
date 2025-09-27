@@ -1,25 +1,38 @@
-# Nextcloud en Raspberry Pi 5 — Docker · MariaDB · Cloudflare Tunnel · Tailscale
+# Nextcloud en Raspberry Pi 5 con Docker
 
-Infraestructura personal segura con **Nextcloud** y **MariaDB** en **Raspberry Pi 5** (ARM64) usando **Docker**. Acceso externo mediante **Cloudflare Tunnel**; acceso de administración por **Tailscale (SSH)**. Backups automatizados y alertas básicas.
+**Objetivo:** Montar un servidor Nextcloud seguro y automatizado sobre Raspberry Pi 5 + Docker, con acceso privado vía Tailscale y público controlado con Cloudflare Tunnel.
 
-- OS: Ubuntu Server 24.04 (aarch64)
-- Hardware: RPi 5 · 8GB RAM · SSD 512GB
-- ISP: Digi (puertos bloqueados)
-- DNS: Hostinger (`zonasecure.xyz`)
-- Dominio: `cloud.zonasecure.xyz`
+---
 
-## Documentación
+## 📂 Documentación
+
 - [00 - Overview](docs/00-overview.md)
 - [01 - Infraestructura](docs/01-infraestructura.md)
-- [02 - Docker & Contenedores](docs/02-docker-contenedores.md)
+- [02 - Docker & Contenedores](docs/02-docker.md)
 - [03 - Backups](docs/03-backups.md)
 - [04 - Seguridad](docs/04-seguridad.md)
 - [05 - Automatización](docs/05-automatizacion.md)
 - [06 - Monitoreo](docs/06-monitoreo.md)
-- [errores](docs/07-errores.md)
+- [Errores y lecciones aprendidas](docs/errores.md)
 
-## Despliegue rápido (resumen)
-1. Copia `.env.example` a `.env` y completa variables.
-2. Arranca servicios:
-   ```bash
-   docker compose up -d
+---
+
+## ⚙️ Componentes principales
+- Raspberry Pi 5 (8GB RAM, 512GB SSD)
+- Ubuntu Server 24.04 (aarch64)
+- Docker + Docker Compose
+- Nextcloud + MariaDB
+- Cloudflare Tunnel + Tailscale
+- Scripts de automatización y backups
+
+---
+
+## 🔒 Seguridad
+- SSH solo con claves vía interfaz `tailscale0`.
+- Firewall UFW bloqueando todo salvo LAN/Tailscale.
+- Cloudflare Tunnel para acceso externo sin abrir puertos.
+
+---
+
+## 📜 Licencia
+MIT — ver [LICENSE](LICENSE).
