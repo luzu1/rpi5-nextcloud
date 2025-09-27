@@ -1,37 +1,39 @@
-Instalación de Docker y Compose
 
-# Instalar Docker y Docker Compose plugin
+## Instalar Docker y Docker Compose plugin
+
+```bash
 sudo apt update && sudo apt -y upgrade
 curl -fsSL https://get.docker.com | sh
 sudo apt -y install docker-compose-plugin
+```
+Verifica:
 
-Verificar:
-
+```bash
 docker --version
 docker compose version
+```
 
-Estructura de carpeta recomendada.
+Estructura de carpetas recomendada
 
-/srv/nextcloud/
-  ├── db/         # datos de MariaDB
-  ├── app/        # configuración Nextcloud
-  ├── data/       # archivos de usuarios
-/srv/npm/          # datos de Nginx Proxy Manager (opcional)
-/srv/cloudflared/  # config de túnel
+```bash
+sudo mkdir -p /srv/nextcloud/{db,app,data}
+sudo mkdir -p /srv/npm/{data,letsencrypt}
+sudo mkdir -p /srv/cloudflared
+```
 
-Cotenedores
+- /srv/nextcloud/db → datos de MariaDB
 
--nextcloud_db → MariaDB con transacciones seguras
+- /srv/nextcloud/app → configuración de Nextcloud
 
--nextcloud_app → servicio Nextcloud en ARM64
+- /srv/nextcloud/data → archivos de usuarios
 
--reverse_proxy (opcional) → Nginx Proxy Manager para LAN
+- /srv/npm/* → (opcional) Nginx Proxy Manager
 
--tunnel → Cloudflare Tunnel para acceso externo seguro
-
+- /srv/cloudflared → (opcional) configuración del túnel
 
 Ejemplo de docker-compose.yml
 
+```bash
 version: "3.8"
 
 services:
@@ -63,7 +65,7 @@ services:
       - /srv/nextcloud/app:/config
       - /srv/nextcloud/data:/data
     ports:
-      - "8080:80"
+      - "8080:80"   # acceso LAN; el acceso externo se hace por túnel
 
   reverse_proxy:
     image: jc21/nginx-proxy-manager:latest
@@ -84,3 +86,4 @@ services:
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARED_TUNNEL_TOKEN}
     command: tunnel run
+```
