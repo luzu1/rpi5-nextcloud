@@ -35,4 +35,4 @@
 ---
 
 ## 📜 Licencia
-MIT — ver [LICENSE](LICENSE).
+MIT — ver [LICENSE](licencia).
