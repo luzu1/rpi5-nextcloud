@@ -11,7 +11,7 @@
 - [02 - Docker & Nextcloud](docs/02-docker&nextcloud.md)
 - [03 - Seguridad](docs/03-seguridad.md)
 - [04 - Automatización](docs/04-automatizacion.md)
-- [05 - Vaultwarden].(docs/05-vaultwarden.md).
+- [05 - Vaultwarden].(docs/05-vaultwarden.md)
 - [Errores y lecciones aprendidas](docs/errores.md)
 
 ---
