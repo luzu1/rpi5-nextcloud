@@ -70,7 +70,7 @@ b) Permitir solo tráfico necesario
 - SSH vía Tailscale
 
 - HTTP/HTTPS solo desde la LAN
-- 
+
 ```bash
 sudo ufw allow from 192.xxx.1.0/24 to any port 80,443 proto tcp
 ```
