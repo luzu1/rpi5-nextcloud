@@ -74,6 +74,17 @@ Prueba:
 ### 3) Backups automáticos
 
 
+Para garantizar la seguridad de los datos, es fundamental implementar un sistema de copias de seguridad automáticas.
+En este proyecto los backups incluyen:
+
+Dump completo de la base de datos MariaDB
+Archivos de usuario en /srv/nextcloud/data
+Retención de 21 días para diarios y 4 semanas para semanales
+Notificación automática por correo al finalizar
+Los backups se almacenan en el propio servidor (ej: /home/<usuario>/backups/nextcloud).
+Se recomienda sincronizarlos periódicamente con un almacenamiento externo (NAS, Nextcloud externo o S3).
+
+
 3.1 Script backup-nextcloud.sh:
 
 ```bash
