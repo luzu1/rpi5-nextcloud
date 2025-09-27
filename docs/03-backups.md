@@ -14,12 +14,14 @@ Se recomienda sincronizarlos periódicamente con un almacenamiento externo (NAS,
 
 ---
 
-1) Crear directorio para backups
+## 1) Crear directorio para backups
 
 ```bash
 mkdir -p /home/$USER/backups/nextcloud
 ```
-2) Script de backup
+-----
+
+## 2) Script de backup
 ```bash
 mkdir -p ~/automation
 nano ~/automation/backup-nextcloud.sh
@@ -63,13 +65,18 @@ Dar permisos de ejecucion:
 ```bash
 chmod +x ~/automation/backup-nextcloud.sh
 ```
+
 ---------------
-3) Script de restauración
+
+## 3) Script de restauración
 Este script permite restaurar una copia específica.
+
 ```bash
 nano ~/automation/restore-nextcloud.sh
 ```
+
 Contenido de restore-nextcloud.sh
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -98,18 +105,18 @@ docker exec -i nextcloud_db sh -c "mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME
 echo "Restauración completada desde ${TARGET}"
 ```
 
-Dar permisos:
+- Dar permisos:
 ```bash
 chmod +x ~/automation/restore-nextcloud.sh
 ```
 
-prueba:
+- prueba:
 ```bash
 ./restore-nextcloud.sh 2025-09-27_0315
 ```
 -----------
 
-4) Programación con cron
+## 4) Programación con cron
 
 Editar el cron del usuario
 ```bash
@@ -119,8 +126,10 @@ Agregar las tareas (Backup diario a las 03:15)
 ```bash
 15 3 * * * /home/$USER/automation/backup-nextcloud.sh >> /home/$USER/backup.log 2>&1
 ```
+
 -------
-5) Comprobación
+
+## 5) Comprobación
 
 Verificar que se generan las carpetas con fecha:
 ```bash
