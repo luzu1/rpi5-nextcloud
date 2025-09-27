@@ -12,7 +12,7 @@
 - [03 - Seguridad](docs/03-seguridad.md)  
 - [04 - Automatización](docs/04-automatizacion.md)  
 - [05 - Vaultwarden](docs/05-vaultwarden.md)  
-- [07 - Errores y lecciones aprendidas](docs/07-errores.md)  
+- [07 - Errores y lecciones aprendidas](docs/errores.md)  
 
 ---
 
@@ -24,7 +24,7 @@ Conectividad mediante ISP con puertos bloqueados → uso de Tailscale para acces
 ---
 
 ## 📦 Docker & Nextcloud
-[Ver documentación completa](docs/02-docker.md)  
+[Ver documentación completa](docs/02-docker&nextcloud.md)  
 Instalación de Docker y Docker Compose.  
 Despliegue de Nextcloud + MariaDB en contenedores ARM64.  
 Estructura de carpetas `/srv/nextcloud` para separar datos, configuración y base de datos.  
@@ -32,7 +32,7 @@ Estructura de carpetas `/srv/nextcloud` para separar datos, configuración y bas
 ---
 
 ## 🔐 Seguridad
-[Ver documentación completa](docs/04-seguridad.md)  
+[Ver documentación completa](docs/03-seguridad.md)  
 - SSH solo con claves, restringido a interfaz `tailscale0`.  
 - Firewall UFW bloqueando todo salvo LAN y Tailscale.  
 - Acceso externo gestionado con Cloudflare Tunnel, sin abrir puertos en el router.  
@@ -40,7 +40,7 @@ Estructura de carpetas `/srv/nextcloud` para separar datos, configuración y bas
 ---
 
 ## ⚙️ Automatización
-[Ver documentación completa](docs/05-automatizacion.md)  
+[Ver documentación completa](docs/04-automatizacion.md)  
 Scripts en `~/automation` para:  
 - Backups automáticos (archivos + base de datos).  
 - Restauración validada.  
@@ -58,7 +58,7 @@ Gestor de contraseñas auto-hospedado, accesible en LAN y protegido con túnel s
 ---
 
 ## 🛠️ Errores y Lecciones Aprendidas
-[Ver documentación completa](docs/07-errores.md)  
+[Ver documentación completa](docs/errores.md)  
 Problemas reales encontrados y solucionados:  
 - Incompatibilidad de imágenes Docker en ARM64.  
 - Permisos de carpetas `data`.  
