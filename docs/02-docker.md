@@ -87,3 +87,12 @@ services:
       - TUNNEL_TOKEN=${CLOUDFLARED_TUNNEL_TOKEN}
     command: tunnel run
 ```
+
+Ejecución
+
+```bash
+cd config
+docker compose pull
+docker compose up -d
+docker compose ps
+```
