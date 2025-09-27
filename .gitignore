@@ -1,17 +1,22 @@
-# Sistema
+# Sistema/editores
 .DS_Store
 Thumbs.db
-
-# Entornos
-venv/
-node_modules/
-.env
-
-# Contenedores / datos persistentes (NO subir)
-data/
-backups/
-*.log
-
-# Editores
 .vscode/
 .idea/
+
+# Entornos/variables
+.env
+*.env
+*.key
+*.pem
+
+# Datos locales (NO subir)
+backups/
+data/
+logs/
+*.log
+
+# Imágenes/compilados
+*.tar
+*.bak
+
