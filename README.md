@@ -17,14 +17,14 @@
 ---
 
 ##  Infraestructura
-[Ver documentación completa]
+
 Raspberry Pi 5 (8GB RAM, 512GB SSD) con Ubuntu Server 24.04 (aarch64).  
 Conectividad mediante ISP con puertos bloqueados → uso de Tailscale para acceso privado y Cloudflare Tunnel para acceso público seguro.  
 
 ---
 
 ##  Docker & Nextcloud
-[Ver documentación completa]
+
 Instalación de Docker y Docker Compose.  
 Despliegue de Nextcloud + MariaDB en contenedores ARM64.  
 Estructura de carpetas `/srv/nextcloud` para separar datos, configuración y base de datos.  
@@ -32,7 +32,7 @@ Estructura de carpetas `/srv/nextcloud` para separar datos, configuración y bas
 ---
 
 ##  Seguridad
-[Ver documentación completa]
+
 - SSH solo con claves, restringido a interfaz `tailscale0`.  
 - Firewall UFW bloqueando todo salvo LAN y Tailscale.  
 - Acceso externo gestionado con Cloudflare Tunnel, sin abrir puertos en el router.  
@@ -40,7 +40,7 @@ Estructura de carpetas `/srv/nextcloud` para separar datos, configuración y bas
 ---
 
 ##  Automatización
-[Ver documentación completa]
+
 Scripts en `~/automation` para:  
 - Backups automáticos (archivos + base de datos).  
 - Restauración validada.  
@@ -51,14 +51,14 @@ Scripts en `~/automation` para:
 ---
 
 ##  Vaultwarden
-[Ver documentación completa]
+
 Implementación de **Vaultwarden** en un stack de Docker separado.  
 Gestor de contraseñas auto-hospedado, accesible en LAN y protegido con túnel seguro para acceso externo.  
 
 ---
 
 ##  Errores y Lecciones Aprendidas
-[Ver documentación completa]
+
 Problemas reales encontrados y solucionados:  
 - Incompatibilidad de imágenes Docker en ARM64.  
 - Permisos de carpetas `data`.  
