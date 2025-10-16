@@ -31,7 +31,7 @@ Estructura de carpetas `/srv/nextcloud` para separar datos, configuración y bas
 
 ---
 
-## 🔐 Seguridad
+##  Seguridad
 [Ver documentación completa]
 - SSH solo con claves, restringido a interfaz `tailscale0`.  
 - Firewall UFW bloqueando todo salvo LAN y Tailscale.  
