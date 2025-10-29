@@ -1,71 +1,31 @@
-# Nextcloud en Raspberry Pi 5 con Docker
+# **Nextcloud Raspberry Pi 5 (Docker + Tailscale + Cloudflare)**
 
-**Objetivo:** Montar un servidor Nextcloud seguro y automatizado sobre Raspberry Pi 5 con Docker, con acceso privado vía Tailscale y público controlado con Cloudflare Tunnel.  
+**Objetivo:**  
 
----
-
-##  Documentación
-
-- [00 - Overview](docs/00-overview.md)  
-- [01 - Infraestructura](docs/01-infraestructura.md)  
-- [02 - Docker & Nextcloud](docs/02-docker&nextcloud.md)  
-- [03 - Seguridad](docs/03-seguridad.md)  
-- [04 - Automatización](docs/04-automatizacion.md)  
-- [05 - Vaultwarden](docs/05-vaultwarden.md)  
-- [07 - Errores y lecciones aprendidas](docs/errores.md)  
+Implementar un servidor Nextcloud completamente seguro, automatizado y autosuficiente sobre una Raspberry Pi 5.  
+El sistema integra red privada mediante Tailscale, acceso público controlado por Cloudflare Tunnel, automatización de tareas, alertas por correo y copias de seguridad remotas.
 
 ---
 
-##  Infraestructura
+## **Documentación**
 
-Raspberry Pi 5 (8GB RAM, 512GB SSD) con Ubuntu Server 24.04 (aarch64).  
-Conectividad mediante ISP con puertos bloqueados → uso de Tailscale para acceso privado y Cloudflare Tunnel para acceso público seguro.  
+- [00 - Overview](docs/00-overview.md) : Resumen general del proyecto, alcance, objetivos y componentes principales.
 
----
+- [01 - Infraestructura](docs/01-infraestructura.md) : Preparación del entorno: Raspberry Pi OS, red, Tailscale, Cloudflare Tunnel y estructura de carpetas base.
 
-##  Docker & Nextcloud
+- [02 - Docker & Nextcloud](docs/02-docker-nextcloud.md) : Instalación de Docker y Docker Compose, configuración del contenedor de Nextcloud y MariaDB, variables .env y comprobaciones de estado.
 
-Instalación de Docker y Docker Compose.  
-Despliegue de Nextcloud + MariaDB en contenedores ARM64.  
-Estructura de carpetas `/srv/nextcloud` para separar datos, configuración y base de datos.  
+- [03 - Seguridad](docs/03-seguridad.md) :  Endurecimiento del sistema con UFW, SSH seguro, Tailscale, Cloudflare Tunnel y buenas prácticas de acceso.
 
----
+- [04 - Automatización](docs/04-automatizacion.md) : Scripts de mantenimiento automático para watchdog, actualizaciones de sistema, contenedores y verificación de servicios.
 
-##  Seguridad
+- [05 - Alertas SSH & Correo](docs/05-alertas-ssh-correo.md) : Configuración de notificaciones por correo (msmtp), alertas de inicio de sesión SSH y estado de Nextcloud.
 
-- SSH solo con claves, restringido a interfaz `tailscale0`.  
-- Firewall UFW bloqueando todo salvo LAN y Tailscale.  
-- Acceso externo gestionado con Cloudflare Tunnel, sin abrir puertos en el router.  
+- [06 - Backups Remotos (Windows)](docs/06-backups-remotos.md) : Automatización de copias de seguridad locales y transferencia a Windows mediante rsync vía Tailscale.
+
+- [07 - Restauración y Mantenimiento](docs/07-restauracion-mantenimiento.md) : Procedimiento para restaurar Nextcloud desde copias de seguridad, comprobaciones finales y buenas prácticas de mantenimiento.
 
 ---
-
-##  Automatización
-
-Scripts en `~/automation` para:  
-- Backups automáticos (archivos + base de datos).  
-- Restauración validada.  
-- Watchdog que reinicia contenedores caídos.  
-- Actualizaciones periódicas de Docker y sistema operativo.  
-- Notificaciones por correo con `notify.sh`.  
-
----
-
-##  Vaultwarden
-
-Implementación de **Vaultwarden** en un stack de Docker separado.  
-Gestor de contraseñas auto-hospedado, accesible en LAN y protegido con túnel seguro para acceso externo.  
-
----
-
-##  Errores y Lecciones Aprendidas
-
-Problemas reales encontrados y solucionados:  
-- Incompatibilidad de imágenes Docker en ARM64.  
-- Permisos de carpetas `data`.  
-- Puertos bloqueados por ISP → uso de túneles.  
-- Backups incompletos → integración de base de datos.  
-- Notificaciones con `msmtp` y `notify.sh`.  
-- Logs de Docker creciendo sin límite → rotación configurada.  
 
 ---
 
