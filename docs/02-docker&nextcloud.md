@@ -1,175 +1,239 @@
-## Introducción
-En este proyecto usamos **Docker** y **Docker Compose** para desplegar Nextcloud y sus servicios en una Raspberry Pi 5.  
+# 02 – Docker & Nextcloud
 
-La instalación de **Nextcloud** se hace **dentro de Docker**: no se descarga manualmente ni se configura PHP/Apache en el host.  
-El servicio `nextcloud_app` en `docker-compose.yml` se encarga de levantar automáticamente Nextcloud con su configuración mínima.  
+instalar Docker/Compose, crear la estructura del proyecto, definir variables en `.env`, crear `docker-compose.yml` y desplegar **Nextcloud + MariaDB** en el puerto **8080**.
 
+---
 
-## 1) Instalar Docker y Docker Compose plugin
+## 1) Instalar Docker y Compose plugin
+
+*en la Raspberry Pi por SSH o consola local.* : descarga e instala Docker y el plugin Compose v2. Las últimas dos líneas confirman que ambas herramientas están disponibles.
 
 ```bash
-sudo apt update && sudo apt -y upgrade
+# Actualiza paquetes base
+sudo apt update && sudo apt full-upgrade -y
+
+# Instala Docker Engine (script oficial)
 curl -fsSL https://get.docker.com | sh
-sudo apt -y install docker-compose-plugin
-```
-Verifica:
 
-```bash
+# (Opcional) instala utilidades si faltan
+sudo apt install -y ca-certificates curl gnupg lsb-release
+
+# Verifica versiones
 docker --version
 docker compose version
 ```
+---
 
-Estructura de carpetas recomendada
+## 2) Crear estructura de carpetas
+
+*en la Raspberry Pi.* : crea una ruta clara para tus archivos del stack (`~/docker/nextcloud`) y una carpeta opcional para futuras copias.
 
 ```bash
-sudo mkdir -p /srv/nextcloud/{db,app,data}
-sudo mkdir -p /srv/npm/{data,letsencrypt}
-sudo mkdir -p /srv/cloudflared
+# Carpeta del proyecto Nextcloud
+mkdir -p ~/docker/nextcloud
+
+# (Opcional) Carpeta para backups locales
+mkdir -p ~/backups/nextcloud
+```
+---
+
+## 3) Variables de entorno (.env)
+
+*en la Raspberry Pi, dentro de la carpeta del proyecto.*
+
+```bash
+cd ~/docker/nextcloud
+nano .env
 ```
 
-- /srv/nextcloud/db → datos de MariaDB
-
-- /srv/nextcloud/app → configuración de Nextcloud
-
-- /srv/nextcloud/data → archivos de usuarios
-
-- /srv/npm/* → (opcional) Nginx Proxy Manager
-
-- /srv/cloudflared → (opcional) configuración del túnel
-
-----------
-
-## 2) Variables de entorno
-
-Crea un .env local (usa valores reales solo en el servidor). En el repo público sube .env.example con placeholders.
-```bash
-mkdir -p ~/config
-cat > ~/config/.env <<'EOF'
+**Ajusta:**
+```ini
 # Zona horaria
 TZ=Europe/Madrid
 
-# MariaDB (Nextcloud)
-DB_ROOT_PASSWORD=CAMBIA_ESTE_VALOR
-DB_NAME=nextcloud
-DB_USER=nc_user
-DB_PASSWORD=CAMBIA_ESTE_VALOR
+# --- MariaDB ---
+MYSQL_ROOT_PASSWORD=CAMBIA_ESTE_VALOR_ROOT
+MYSQL_DATABASE=nextcloud
+MYSQL_USER=nextcloud
+NC_DB_PASS=CAMBIA_ESTE_VALOR_DB
 
-# Cloudflare Tunnel (opcional)
-CLOUDFLARED_TUNNEL_TOKEN=PEGA_AQUI_TU_TOKEN
-EOF
-```
-Proteger con permisos:
-```bash
-chmod 600 ~/config/.env
+# --- Nextcloud ---
+# Dominio público o IP que Nextcloud debe confiar (se usa dentro del contenedor)
+TRUSTED_DOMAINS=cloud.example.com
 ```
 
------------
+**Qué hace:** centraliza credenciales y parámetros que usará `docker-compose.yml`. Usa contraseñas largas y únicas.
 
-## 3) Archivo `docker-compose.yml`
+---
 
-Aquí definimos **todos los servicios**.  
-El contenedor `nextcloud_app` es el que instala y corre Nextcloud:
+## 4) Crear `docker-compose.yml` (sin `version`)
+
+**Dónde ejecutar:** *en la Raspberry Pi, en `~/docker/nextcloud`.*
 
 ```bash
-version: "3.8"
+nano docker-compose.yml
+```
 
+**Pega:**
+```yaml
 services:
-  nextcloud_db:
-    image: mariadb:10.11
+  db:
+    image: mariadb:11.4
     container_name: nextcloud_db
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     restart: unless-stopped
+    command: >
+      --transaction-isolation=READ-COMMITTED
+      --binlog-format=ROW
+      --innodb_flush_log_at_trx_commit=1
+      --innodb_buffer_pool_size=256M
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${NC_DB_PASS}
       - TZ=${TZ}
     volumes:
-      - /srv/nextcloud/db:/var/lib/mysql
+      - ./db:/var/lib/mysql
 
-  nextcloud_app:
-    image: lscr.io/linuxserver/nextcloud:latest
+  app:
+    image: nextcloud:31-apache
     container_name: nextcloud_app
-    depends_on:
-      - nextcloud_db
     restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8080:80"              # Acceso local http://IP_RASPBERRY:8080
     environment:
-      - PUID=1000
-      - PGID=1000
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${NC_DB_PASS}
+      - TRUSTED_DOMAINS=${TRUSTED_DOMAINS}
       - TZ=${TZ}
     volumes:
-      - /srv/nextcloud/app:/config
-      - /srv/nextcloud/data:/data
-    ports:
-      - "8080:80"   # acceso LAN; el acceso externo se hace por túnel
+      - nextcloud_html:/var/www/html
 
-  reverse_proxy:
-    image: jc21/nginx-proxy-manager:latest
-    container_name: reverse_proxy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "81:81"
-    volumes:
-      - /srv/npm/data:/data
-      - /srv/npm/letsencrypt:/etc/letsencrypt
-
-  tunnel:
-    image: cloudflare/cloudflared:latest
-    container_name: tunnel
-    restart: unless-stopped
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARED_TUNNEL_TOKEN}
-    command: tunnel run
+volumes:
+  nextcloud_html:
 ```
---------
-## 4) Ejecución
+
+**Qué hace:** define dos servicios: `db` (MariaDB 11.4) y `app` (Nextcloud Apache). Los datos de la base se guardan en `./db` y los de la aplicación en el volumen `nextcloud_html`. El puerto 8080 queda publicado para acceso web local.
+
+> **Nota:** omitimos la clave `version` para evitar advertencias con Compose v2.
+
+---
+
+## 5) Desplegar el stack
+
+**Dónde ejecutar:** *en la Raspberry Pi, dentro de `~/docker/nextcloud`.*
 
 ```bash
-cd config
+cd ~/docker/nextcloud
+
+# Descarga imágenes y levanta en segundo plano
 docker compose pull
 docker compose up -d
+
+# Ver estado
 docker compose ps
 ```
 
-----------
+**Qué hace:** baja las imágenes necesarias y lanza los contenedores. `ps` debe mostrar `nextcloud_db` y `nextcloud_app` en `running`.
 
-## 5) Acceso:
+---
 
-- LAN: http://<IP-LAN>:8080
+## 6) Primer acceso y asistente web
 
-- Externo: el dominio configurado en tu túnel (si usas tunnel).
+**Desde el navegador de tu PC en la LAN:**  
+`http://IP_DE_TU_RASPBERRY:8080`
 
-------
+Si usas **Tailscale**, también funciona con la IP Tailscale (`100.x.x.x`):  
+`http://IP_TAILSCALE:8080`
 
-## 6) Primeros ajustes de Nextcloud:
+En el asistente web:
+- Crea **usuario administrador** y contraseña.
+- En **Base de datos**, elige **MySQL/MariaDB** y completa:
+  - **Servidor**: `db`
+  - **Usuario**: `${MYSQL_USER}`
+  - **Contraseña**: `${NC_DB_PASS}`
+  - **Base de datos**: `${MYSQL_DATABASE}`
 
-- Si el instalador indica problemas de permisos en data, corrige:
+**Qué hace:** finaliza la instalación de Nextcloud y enlaza con MariaDB usando los valores del `.env`.
+
+---
+
+## 7) Comprobaciones desde consola
+
+**Dónde ejecutar:** *en la Raspberry Pi.*
+
 ```bash
-sudo chown -R 1000:1000 /srv/nextcloud/app /srv/nextcloud/data
-docker restart nextcloud_app
+# Comprobar estado HTTP del contenedor (debe devolver JSON con "installed")
+curl -fsSL http://127.0.0.1:8080/status.php
+
+# Estado interno con occ
+docker exec -u www-data nextcloud_app php occ status
+
+# (Por si quedó activo) desactivar modo mantenimiento
+docker exec -u www-data nextcloud_app php occ maintenance:mode --off
 ```
 
-------
+**Qué hace:** valida que la instancia está instalada y operativa.
 
-## 7) Troubleshooting rápido
+---
 
-- Ver contenedores activos
+## 8) Ajustes útiles (opcionales)
+
+**Actualizar trusted domains por CLI (si cambiaste dominio/IP):**
 ```bash
-docker ps
+docker exec -u www-data nextcloud_app php occ config:system:set trusted_domains 1 --value="${TRUSTED_DOMAINS}"
 ```
-- Últimas líneas de logs
+
+**Aplicar índices en BD (mejoras internas):**
 ```bash
-docker logs -n 200 nextcloud_app
-docker logs -n 200 nextcloud_db
+docker exec -u www-data nextcloud_app php occ db:add-missing-indices
 ```
-- Ver puertos en uso
+
+---
+
+## 9) Actualizar contenedores (manual)
+
+**Dónde ejecutar:** *en la Raspberry Pi, dentro del proyecto.*
+
 ```bash
-ss -tulpn | grep -E '(:80|:81|:443|:8080)'
+cd ~/docker/nextcloud
+docker compose pull
+docker compose up -d
+docker image prune -f
 ```
-- Revisión de permisos si Nextcloud no puede escribir
+
+**Qué hace:** trae nuevas versiones y reinicia con mínima interrupción. El prune elimina capas obsoletas.
+
+---
+
+## 10) Solución de problemas comunes
+
+**Error 500 o “Access denied for user 'nextcloud'@…”**  
+Asegurate de que **usuario/contraseña/base** coinciden entre `.env`, `docker-compose.yml` y lo que ingresaste en el asistente web. Si cambiaste la contraseña, puedes forzarla en MariaDB:
+
 ```bash
-sudo chown -R 1000:1000 /srv/nextcloud/app /srv/nextcloud/data
+cd ~/docker/nextcloud
+# Reaplicar credenciales en MariaDB
+docker exec -i nextcloud_db mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" <<'SQL'
+ALTER USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${NC_DB_PASS}';
+FLUSH PRIVILEGES;
+SQL
+# Reiniciar la app
+docker compose restart app
 ```
+
+**`status.php` vacío o 500**  
+Revisa logs:
+```bash
+docker logs --tail=200 nextcloud_app
+docker logs --tail=200 nextcloud_db
+```
+
+---
+
+✅ Con esto queda **Nextcloud + MariaDB** operativos en Docker.  
+La **exposición pública con Cloudflare Tunnel** y el **endurecimiento de seguridad** se realizan en los pasos siguientes.
