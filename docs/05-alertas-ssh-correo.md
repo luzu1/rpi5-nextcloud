@@ -1,7 +1,7 @@
 # 05 – Alertas SSH
 
-**Objetivo:** enviar un correo cada vez que alguien inicia sesión por **SSH** en la Raspberry Pi, evitando duplicados y manteniendo registros.  
-Se asume que ya configuraste **msmtp** y probaste envíos (Paso 03 – Seguridad).
+Configuraremos para enviar un correo cada vez que alguien inicia sesión por **SSH** en la Raspberry Pi, evitando duplicados y manteniendo registros.  
+Se asume que ya configuramos **msmtp** y probaste envíos (Paso 03 – Seguridad).
 
 ---
 
