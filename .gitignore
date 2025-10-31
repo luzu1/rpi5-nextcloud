@@ -1,22 +1,45 @@
-# Sistema/editores
+# === Sistema / editores ===
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 
-# Entornos/variables
+# === Entornos / variables ===
 .env
 *.env
 *.key
 *.pem
+*.crt
 
-# Datos locales (NO subir)
+# === Docker / Nextcloud ===
+docker-compose.override.yml
+docker-data/
+nextcloud_data/
+db_data/
+app_data/
+
+# === Automatizaciones / Backups ===
 backups/
-data/
 logs/
 *.log
-
-# Imágenes/compilados
-*.tar
 *.bak
+*.tar
+*.zst
+*.sql
+SHA256SUMS
+tmp/
+*.tmp
 
+# === Archivos sensibles ===
+msmtprc
+config.php
+id_rsa
+id_ed25519
+authorized_keys
+known_hosts
+
+# === Archivos de sistema ===
+__pycache__/
+*.pyc
+*.swp
+*.swo
