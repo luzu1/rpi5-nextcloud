@@ -13,7 +13,7 @@ El sistema integra red privada mediante Tailscale, acceso público controlado po
 
 - [01 - Infraestructura](docs/01-infraestructura.md) : Preparación del entorno: Raspberry Pi OS, red, Tailscale, Cloudflare Tunnel y estructura de carpetas base.
 
-- [02 - Docker & Nextcloud](docs/02-docker-nextcloud.md) : Instalación de Docker y Docker Compose, configuración del contenedor de Nextcloud y MariaDB, variables .env y comprobaciones de estado.
+- [02 - Docker & Nextcloud](docs/02-docker&nextcloud.md) : Instalación de Docker y Docker Compose, configuración del contenedor de Nextcloud y MariaDB, variables .env y comprobaciones de estado.
 
 - [03 - Seguridad](docs/03-seguridad.md) :  Endurecimiento del sistema con UFW, SSH seguro, Tailscale, Cloudflare Tunnel y buenas prácticas de acceso.
 
