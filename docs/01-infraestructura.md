@@ -4,7 +4,7 @@ En esta sección se prepara la infraestructura base del proyecto **Nextcloud en 
 
 ---
 
-## 0) Requisitos previos
+## Requisitos previos
 
 - Raspberry Pi 5 (8GB recomendado) + fuente oficial.
 - microSD (≥32GB) o SSD USB.
