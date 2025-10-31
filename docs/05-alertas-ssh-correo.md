@@ -73,7 +73,7 @@ EOF
 {
   echo "To: ${MAIL_TO}"
   echo "From: ${MAIL_FROM}"
-  echo "Subject: 🔐 SSH login alert - ${HOSTNAME_FQDN}"
+  echo "Subject:  SSH login alert - ${HOSTNAME_FQDN}"
   echo
   echo "${BODY}"
 } | /usr/sbin/sendmail -t || logger -t ssh-login-alert "Fallo al enviar correo"
@@ -115,72 +115,8 @@ Prueba desde otra máquina (o nueva sesión) y verificá que recibís **un** cor
 
 ---
 
-## 4) (Alternativa simple) Hook por perfil de sesión
 
-**Usar solo si no querés tocar PAM.** Puede generar duplicados en algunas shells.
-
-```bash
-sudo nano /etc/profile.d/ssh_alert.sh
-```
-
-Contenido:
-
-```bash
-#!/usr/bin/env bash
-# Alerta simple basada en variables de entorno de SSH (puede duplicar en shells no-interactivas)
-if [[ -n "${SSH_CONNECTION:-}" ]]; then
-  IP="${SSH_CONNECTION%% *}"
-  DATE="$(date '+%Y-%m-%d %H:%M:%S %Z')"
-  USER="$(whoami)"
-  HOST="$(hostname)"
-  MSG="Nuevo login SSH en ${HOST}\nDesde: ${IP}\nFecha: ${DATE}\nUsuario: ${USER}"
-  echo -e "$MSG" | mail -s "🔐 SSH Login Alert - ${HOST}" alertas@ejemplo.com || true
-fi
-```
-
-Permisos:
-
-```bash
-sudo chmod +x /etc/profile.d/ssh_alert.sh
-```
-
-> Recomendado usar el método de **PAM** (paso 3) para evitar alertas duplicadas.
-
----
-
-## 5) Log de msmtp y rotación
-
-Activa el log (si no lo hiciste en el Paso 03) y configura **logrotate** para evitar que crezca indefinidamente.
-
-```bash
-sudo mkdir -p /var/log
-sudo touch /var/log/msmtp.log
-sudo chown root:adm /var/log/msmtp.log
-sudo chmod 640 /var/log/msmtp.log
-
-# logrotate
-sudo nano /etc/logrotate.d/msmtp
-```
-
-Contenido:
-
-```
-/var/log/msmtp.log {
-    weekly
-    rotate 8
-    compress
-    missingok
-    notifempty
-    create 640 root adm
-    postrotate
-        /bin/systemctl reload-or-restart rsyslog.service >/dev/null 2>&1 || true
-    endscript
-}
-```
-
----
-
-## 6) Pruebas y solución de problemas
+## 4) Pruebas y solución de problemas
 
 Comandos útiles:
 
