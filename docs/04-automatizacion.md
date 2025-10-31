@@ -1,6 +1,6 @@
 # 04 – Automatización
 
-**Objetivo:** crear una capa de automatización para **Nextcloud en Docker** con tareas de: *watchdog*, *backup semanal*, *actualización del stack*, *actualización del sistema* y *notificaciones por email*.  
+Aqui crearemos una capa de automatización para **Nextcloud en Docker** con tareas de: *watchdog*, *backup semanal*, *actualización del stack*, *actualización del sistema* y *notificaciones por email*.  
 Se parte de los pasos previos: infraestructura lista, Nextcloud + MariaDB en Docker, msmtp funcional (seguridad).
 
 ---
