@@ -1,29 +1,21 @@
-# 01 – Infraestructura
+# 01 - Infraestructura
 
-En esta sección se prepara la infraestructura base del proyecto **Nextcloud en Raspberry Pi 5**, incluyendo la instalación del sistema operativo, configuración de red, acceso remoto mediante **SSH**, red privada con **Tailscale**, y la estructura de carpetas inicial del entorno.
+## Introducción
 
----
-
-## Requisitos previos
-
-- Raspberry Pi 5 (8GB recomendado) + fuente oficial.
-- microSD (≥32GB) o SSD USB.
-- Otro equipo (Windows/macOS/Linux) para grabar la imagen.
-- Red local con DHCP habilitado (router normal).
+En esta sección se prepara toda la infraestructura base del proyecto **Nextcloud en Raspberry Pi 5**, incluyendo el sistema operativo, red privada mediante **Tailscale**, acceso público seguro con **Cloudflare Tunnel** y la gestión de DNS mediante **Hostinger**.  
+El objetivo es dejar el entorno completamente funcional para los siguientes pasos de instalación de Docker, seguridad y automatización.
 
 ---
 
-## 1) Instalar el sistema operativo en la microSD/SSD
+## 1) Instalación base del sistema
 
-> Recomendado: **Ubuntu Server 24.04 LTS (ARM64)** o **Raspberry Pi OS Lite 64‑bit**.
+Se recomienda utilizar **Ubuntu Server 24.04 LTS (aarch64)** o **Raspberry Pi OS Lite 64-bit**.
 
-Descarga oficial:
-- Ubuntu: https://ubuntu.com/download/raspberry-pi  
-- Raspberry Pi OS: https://www.raspberrypi.com/software/operating-systems/
+Descarga la imagen oficial desde:  
+🔗 [https://ubuntu.com/download/raspberry-pi](https://ubuntu.com/download/raspberry-pi)
 
-Graba la imagen con **Raspberry Pi Imager** o **balenaEtcher**. Conecta la tarjeta/SSD a la Raspberry y enciende.
-
----
+Graba la imagen en una microSD o SSD con **Raspberry Pi Imager**.  
+Luego conecta la Raspberry Pi a la red local por cable y al iniciar, habilita SSH desde un monitor o desde Imager antes de grabar la imagen.
 
 ## 2) Habilitar SSH (según sistema)
 
@@ -84,135 +76,160 @@ Define un **hostname** identificable:
 sudo hostnamectl set-hostname raspi-nextcloud
 ```
 
----
+ Al iniciar por primera vez, el sistema solicitará cambiar la contraseña.
 
-## 5) Actualizar sistema y utilidades básicas
-
+## Actualiza paquetes y herramientas básicas:
 ```bash
 sudo apt update && sudo apt full-upgrade -y
-sudo apt install -y curl wget git jq htop unzip net-tools
+sudo apt install -y curl wget git ufw jq htop net-tools unzip
 sudo reboot
 ```
 
-Tras reiniciar, valida versión:
+---
+
+## 5) Configuración de red y hostname
+
+Verifica la IP asignada:
 ```bash
-lsb_release -a
+hostname -I
 ```
 
 Ejemplo de salida:
 ```
-Distributor ID: Ubuntu
-Description:    Ubuntu 24.04.3 LTS
-Release:        24.04
-Codename:       noble
+192.168.1.145
 ```
 
----
+Asigna un nombre único al dispositivo:
+```bash
+sudo hostnamectl set-hostname raspberry
+```
 
-## 6) IP estática (opcional)
-
-### A) Ubuntu (Netplan)
-Edita el archivo (interfaz típica `eth0`):
+### (Opcional) IP estática
+Edita el archivo de configuración de Netplan:
 ```bash
 sudo nano /etc/netplan/50-cloud-init.yaml
 ```
-Ejemplo **YAML** (ajusta a tu red):
+
+Ejemplo:
 ```yaml
 network:
   version: 2
   ethernets:
     eth0:
       dhcp4: no
-      addresses: [192.168.1.145/24]
+      addresses:
+        - 192.168.1.145/24
       gateway4: 192.168.1.1
       nameservers:
         addresses: [1.1.1.1, 8.8.8.8]
 ```
-Aplica cambios:
+
+Aplica los cambios:
 ```bash
 sudo netplan apply
 ```
 
-### B) Raspberry Pi OS (dhcpcd)
-```bash
-sudo nano /etc/dhcpcd.conf
-```
-Añade al final (ajusta a tu red):
-```
-interface eth0
-static ip_address=192.168.1.145/24
-static routers=192.168.1.1
-static domain_name_servers=1.1.1.1 8.8.8.8
-```
-Guarda y reinicia:
-```bash
-sudo reboot
-```
-
 ---
 
-## 7) Instalar y unir **Tailscale** (acceso privado)
+## 6) Instalación de Tailscale (red privada)
 
-Instala:
+Tailscale crea una red privada cifrada entre tus dispositivos (sin abrir puertos).  
+Instálalo y autentícalo con tu cuenta.
+
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
 ```
 
-Inicia y autentica (abre el enlace que mostrará en tu navegador):
+Verifica que esté conectado correctamente:
 ```bash
-sudo tailscale up --ssh
-```
-Comprueba IP privada de Tailscale (100.x.x.x):
-```bash
-tailscale ip -4
 tailscale status
 ```
 
-> A partir de ahora, podrás acceder por `ssh` usando **la IP de Tailscale** desde tus otros dispositivos con Tailscale.
+Ejemplo de salida:
+```
+100.77.159.93   raspberry   user@   linux   active; relay "fra"
+```
 
 ---
 
-## 8) Preparar **Cloudflare Tunnel** (solo instalación/autenticación)
+## 7) Configuración de Cloudflare Tunnel (acceso público)
 
+Cloudflare Tunnel permite exponer servicios como Nextcloud a Internet sin abrir puertos en el router.  
+Instala el cliente oficial de Cloudflare en la Raspberry Pi:
 
-Instala `cloudflared`:
 ```bash
-curl -fsSL https://pkg.cloudflare.com/install.sh | sudo bash
-sudo apt install -y cloudflared
+sudo mkdir -p /srv/cloudflared
+cd /srv/cloudflared
+sudo curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -o cloudflared
+sudo chmod +x cloudflared
+sudo mv cloudflared /usr/local/bin/
 ```
 
-Autentica contra tu cuenta de Cloudflare (se abrirá un enlace web):
+Autentica tu túnel con tu cuenta de Cloudflare:
 ```bash
 cloudflared tunnel login
 ```
 
-Crea el túnel (guarda el nombre para usarlo en el paso 02):
+Crea el túnel:
 ```bash
 cloudflared tunnel create nextcloud-tunnel
 ```
-Comprueba que se ha creado el archivo de credenciales (ruta típica):
+
+Agrega la configuración base:
 ```bash
-ls -l ~/.cloudflared/
+sudo nano /etc/cloudflared/config.yml
 ```
 
-> En el paso 02 definiremos las **rutas/ingress** y el subdominio en Cloudflare (CNAME con proxy naranja).
+Ejemplo de configuración:
+```yaml
+tunnel: nextcloud-tunnel
+credentials-file: /root/.cloudflared/<UUID>.json
+
+ingress:
+  - hostname: nextcloud.tudominio.com
+    service: http://localhost:8080
+  - service: http_status:404
+```
+
+Inicia y habilita el servicio:
+```bash
+sudo cloudflared service install
+sudo systemctl enable cloudflared
+sudo systemctl start cloudflared
+sudo systemctl status cloudflared
+```
 
 ---
 
-## 9) Estructura de carpetas base (para los siguientes pasos)
+## 8) Configuración DNS en Hostinger
 
-Crea las carpetas que usaremos más adelante (sin Docker todavía):
-```bash
-mkdir -p ~/docker/nextcloud/{db,app}
-mkdir -p ~/docker/automation/{scripts,logs,backups}
+1. Entra al panel de **Hostinger**.  
+2. Abre la sección **Zona DNS** de tu dominio.  
+3. Crea un registro **CNAME** apuntando al dominio gestionado por Cloudflare.
+
+Ejemplo:
 ```
+Tipo: CNAME
+Nombre: nextcloud
+Valor: nextcloud.tunnel.cloudflare.com
+TTL: 3600
+```
+
+Asegúrate de tener activado el proxy (ícono de nube naranja) en Cloudflare para proteger la IP de la Raspberry Pi.
 
 ---
 
-## 10) Comprobaciones rápidas
+## 9) Verificación final
+
+Comprueba la conectividad entre todos los servicios:
 
 ```bash
-hostnamectl
-ip a | grep inet
 tailscale status
+ping 1.1.1.1 -c 4
+cloudflared tunnel list
 ```
+
+Deberías ver tu túnel activo y accesible mediante el dominio configurado en Hostinger.
+
+---
