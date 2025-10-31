@@ -1,109 +1,212 @@
-## Introducción
-[Vaultwarden](https://github.com/dani-garcia/vaultwarden) es una implementación ligera y compatible de Bitwarden, ideal para montar un gestor de contraseñas auto-hospedado.  
-En este proyecto se instala en la Raspberry Pi 5, usando **Docker y Docker Compose**, pero en un stack **separado del de Nextcloud**.
+# 05 – Alertas SSH
+
+**Objetivo:** enviar un correo cada vez que alguien inicia sesión por **SSH** en la Raspberry Pi, evitando duplicados y manteniendo registros.  
+Se asume que ya configuraste **msmtp** y probaste envíos (Paso 03 – Seguridad).
 
 ---
 
-## 1) Preparar estructura de directorios
-
-Creamos carpetas para datos y configuración de Vaultwarden:
+## 1) Dependencias y verificación de correo
 
 ```bash
-sudo mkdir -p /srv/vaultwarden/{data}
-sudo chown -R 1000:1000 /srv/vaultwarden
+sudo apt update
+sudo apt install -y msmtp-mta mailutils
+echo "Test SMTP" | mail -s "SSH Alerts: prueba inicial" tu-correo@ejemplo.com
 ```
 
--------------
+Debe llegarte un correo de prueba. Si no llega, revisa la configuración de msmtp del Paso 03.
 
-## 2) Variables de entorno
+---
 
-Creamos ~/vaultwarden/.env (privado, no subir a GitHub).
-En el repo subiremos env.example.
+## 2) Script de alerta (recomendado: PAM)
+
+Crearemos un script que tomará datos del inicio de sesión y enviará un correo **una sola vez** por sesión SSH.
 
 ```bash
-# Zona horaria
-TZ=Europe/Madrid
-
-# Credenciales admin (interfaz de administración de Vaultwarden)
-ADMIN_TOKEN=CAMBIA_ESTE_VALOR
-
-# Configuración básica
-SIGNUPS_ALLOWED=true
+sudo nano /usr/local/bin/ssh-login-alert
 ```
 
---------------
-
-## 3) Archivo docker-compose.yml
+Contenido del script:
 
 ```bash
-version: "3.8"
+#!/usr/bin/env bash
+# ssh-login-alert: envía un email al abrir sesión SSH vía PAM (sin duplicados)
 
-services:
-  vaultwarden:
-    image: vaultwarden/server:latest
-    container_name: vaultwarden
-    restart: unless-stopped
-    environment:
-      - TZ=${TZ}
-      - ADMIN_TOKEN=${ADMIN_TOKEN}
-      - SIGNUPS_ALLOWED=${SIGNUPS_ALLOWED}
-    volumes:
-      - /srv/vaultwarden/data:/data
-    ports:
-      - "8081:80"   # acceso LAN en puerto 8081
+set -Eeuo pipefail
+
+# === Configuración mínima ===
+MAIL_TO="alertas@ejemplo.com"         # destino de alertas
+MAIL_FROM="notificaciones@tu-dominio.com" # remitente (definido en msmtp)
+
+# === Datos de sesión/PAM ===
+USER_NAME="${PAM_USER:-$(whoami)}"
+REMOTE_IP="${PAM_RHOST:-${SSH_CONNECTION%% *}}"
+HOSTNAME_FQDN="$(hostname -f 2>/dev/null || hostname)"
+DATE_NOW="$(date '+%Y-%m-%d %H:%M:%S %Z')"
+
+# Evitar alertas si no es sesión remota (p. ej., consola local sin IP)
+if [[ -z "${REMOTE_IP:-}" || "${REMOTE_IP}" == "127.0.0.1" || "${REMOTE_IP}" == "::1" ]]; then
+  exit 0
+fi
+
+# Evitar duplicados: cache por PID de sesión y timestamp corto
+CACHE_DIR="/run/ssh-login-alert"
+mkdir -p "$CACHE_DIR"
+MARKER="$CACHE_DIR/${PAM_TTY:-tty}-$(id -u ${USER_NAME})-${REMOTE_IP}"
+if [[ -f "$MARKER" ]]; then
+  # Si el marcador es reciente (<120s), no reenviar
+  if [[ $(( $(date +%s) - $(stat -c %Y "$MARKER" 2>/dev/null || echo 0) )) -lt 120 ]]; then
+    exit 0
+  fi
+fi
+date +%s > "$MARKER"
+
+# Mensaje
+read -r -d '' BODY <<EOF || true
+Nuevo login SSH en ${HOSTNAME_FQDN}
+Fecha: ${DATE_NOW}
+Usuario: ${USER_NAME}
+Desde:  ${REMOTE_IP}
+TTY:    ${PAM_TTY:-N/A}
+EOF
+
+# Envío por sendmail (msmtp)
+{
+  echo "To: ${MAIL_TO}"
+  echo "From: ${MAIL_FROM}"
+  echo "Subject: 🔐 SSH login alert - ${HOSTNAME_FQDN}"
+  echo
+  echo "${BODY}"
+} | /usr/sbin/sendmail -t || logger -t ssh-login-alert "Fallo al enviar correo"
 ```
 
------
-
-## 4) Levantar el stack
+Permisos y propiedad:
 
 ```bash
-cd ~/vaultwarden
-docker compose pull
-docker compose up -d
-docker compose ps
+sudo chmod 755 /usr/local/bin/ssh-login-alert
+sudo chown root:root /usr/local/bin/ssh-login-alert
 ```
 
-Verificar logs:
+---
+
+## 3) Integración con SSH mediante PAM (único envío por sesión)
+
+Activa el hook de **PAM** para que el script se ejecute cuando se abre una sesión SSH.
 
 ```bash
-docker logs -f vaultwarden
+sudo cp /etc/pam.d/sshd /etc/pam.d/sshd.bak
+sudo nano /etc/pam.d/sshd
 ```
 
------------
+Agrega **al final** del archivo (una línea por debajo de las existentes):
 
-## 5) Acceso inicial
+```
+# SSH login alert (envía mail con msmtp)
+session optional pam_exec.so seteuid /usr/local/bin/ssh-login-alert
+```
 
-Interfaz web Vaultwarden:
+Guarda y reinicia el servicio SSH:
 
-- http://<IP-LAN>:8081
+```bash
+sudo systemctl restart ssh
+sudo systemctl status ssh
+```
 
-Interfaz de administración:
+Prueba desde otra máquina (o nueva sesión) y verificá que recibís **un** correo por login.
 
-- http://<IP-LAN>:8081/admin
-(requiere ADMIN_TOKEN configurado en .env).
+---
 
---------
+## 4) (Alternativa simple) Hook por perfil de sesión
 
-6) Integración segura
+**Usar solo si no querés tocar PAM.** Puede generar duplicados en algunas shells.
 
--No exponer el puerto 8081 directamente a Internet.
+```bash
+sudo nano /etc/profile.d/ssh_alert.sh
+```
 
--Usar Cloudflare Tunnel o VPN (Tailscale) para acceso externo seguro.
+Contenido:
 
--Habilitar HTTPS en el proxy si se publica públicamente.
+```bash
+#!/usr/bin/env bash
+# Alerta simple basada en variables de entorno de SSH (puede duplicar en shells no-interactivas)
+if [[ -n "${SSH_CONNECTION:-}" ]]; then
+  IP="${SSH_CONNECTION%% *}"
+  DATE="$(date '+%Y-%m-%d %H:%M:%S %Z')"
+  USER="$(whoami)"
+  HOST="$(hostname)"
+  MSG="Nuevo login SSH en ${HOST}\nDesde: ${IP}\nFecha: ${DATE}\nUsuario: ${USER}"
+  echo -e "$MSG" | mail -s "🔐 SSH Login Alert - ${HOST}" alertas@ejemplo.com || true
+fi
+```
 
--------
+Permisos:
 
-## 7) Buenas prácticas
+```bash
+sudo chmod +x /etc/profile.d/ssh_alert.sh
+```
 
-Mantener .env fuera del repo, subir solo .env.example.
+> Recomendado usar el método de **PAM** (paso 3) para evitar alertas duplicadas.
 
-Respaldar regularmente la carpeta /srv/vaultwarden/data.
+---
 
-Deshabilitar SIGNUPS_ALLOWED después de registrar usuarios iniciales.
+## 5) Log de msmtp y rotación
 
-Usar 2FA en la cuenta de administración.
+Activa el log (si no lo hiciste en el Paso 03) y configura **logrotate** para evitar que crezca indefinidamente.
+
+```bash
+sudo mkdir -p /var/log
+sudo touch /var/log/msmtp.log
+sudo chown root:adm /var/log/msmtp.log
+sudo chmod 640 /var/log/msmtp.log
+
+# logrotate
+sudo nano /etc/logrotate.d/msmtp
+```
+
+Contenido:
+
+```
+/var/log/msmtp.log {
+    weekly
+    rotate 8
+    compress
+    missingok
+    notifempty
+    create 640 root adm
+    postrotate
+        /bin/systemctl reload-or-restart rsyslog.service >/dev/null 2>&1 || true
+    endscript
+}
+```
+
+---
+
+## 6) Pruebas y solución de problemas
+
+Comandos útiles:
+
+```bash
+# Ver últimos correos en el log de msmtp (si está habilitado)
+sudo tail -n 100 /var/log/msmtp.log
+
+# Probar el script de forma manual simulando PAM
+sudo PAM_USER="$USER" PAM_RHOST="1.2.3.4" PAM_TTY="pts/9" /usr/local/bin/ssh-login-alert
+
+# Reiniciar servicio ssh si cambiaste PAM o profile.d
+sudo systemctl restart ssh
+```
+
+Problemas comunes:
+- **No llegan correos**: revisa msmtp (`/etc/msmtprc`), credenciales SMTP y la conectividad a `smtp.<proveedor>:587`.
+- **Doble alerta**: usa el **método PAM** (paso 3) y elimina cualquier script en `/etc/profile.d` que haga lo mismo.
+- **Permisos**: asegurate de que `/usr/local/bin/ssh-login-alert` tenga permisos ejecutables y sea propiedad de `root`.
+
+---
+
+## Resultado
+
+Queda un sistema de **alertas de inicio de sesión SSH** robusto y sin duplicados, apoyado en **PAM** y en msmtp para el envío de emails.  
+Esto complementa la seguridad del Paso 03 y deja todo listo para integrarlo con futuras automatizaciones.
+
 
 
    
