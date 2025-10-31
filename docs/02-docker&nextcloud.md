@@ -1,6 +1,6 @@
 # 02 – Docker & Nextcloud
 
-**Objetivo:** instalar Docker/Compose, definir variables en `.env`, crear `docker-compose.yml` **(sin `version`)** y desplegar **Nextcloud + MariaDB** en el puerto **8080**. *La seguridad y automatizaciones se documentan en pasos posteriores.*
+Instalamos Docker/Compose, definir variables en `.env`, crear `docker-compose.yml` **(sin `version`)** y desplegar **Nextcloud + MariaDB** en el puerto **8080**. *La seguridad y automatizaciones se documentan en pasos posteriores.*
 
 ---
 
